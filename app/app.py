@@ -1,61 +1,49 @@
+from typing import Optional
 from fastapi import FastAPI
+from pydantic import BaseModel
+
 app = FastAPI()
 
-# minimal app - get request
-@app.get("/", tags=['ROOT'])
-async def root() -> dict:
-    return {"Ping": "Pong"}
-
-# Get --> Read Todo
-@app.get("/todo", tags=['todos'])
-async def get_todo() -> dict:
-    return {"data": todos}
+# Pydantic Model: Model with type specifications
+class Blog(BaseModel):
+    title: str
+    body: str
+    published: Optional[bool]
 
 
-# Post --> Create Todo
-@app.post("/todo", tags=['todos'])
-async def add_todo(todo: dict) -> dict:
-    todos.append(todo)
-    return {"data": "The todo has been successfully added"}
+# Always specify paths from most specific to least specific so that they get matched correctly.
+
+# FastAPI will know that q is optional because of the = None. The Optional in Optional[str] is not used by FastAPI (FastAPI will only use the str part), but the Optional[str] will let your editor help you finding errors in your code.
+
+# Query Parameter
+
+@app.get('/blog')
+async def index(limit=10, published: bool=True, sort: Optional[str]=None):
+    if published:
+        return {'data': f'{limit} published blogs from the db'}
+
+    else:
+        return {'data': f'{limit} blogs from the db'}
 
 
-# Put --> Update Todo
-@app.put("/todo/{id}", tags=['todos'])
-async def update_todo(id: int, body:dict) -> dict:
-    for todo in todos:
-        if int(todo['id']) == id:
-            todo['Activity'] = body['Activity']
-        
-            return {
-                "data": "Todo with id {id} has been updated"
-            }
-    
-    return {"data": "Todo with this id {id} wasn't found"}
+@app.get('/blog/unpublished')
+async def unpublished():
+    return {'data': 'all unpublished blogs'}
 
 
-# Delete --> Delete Todo
-@app.delete("/todo/{id}", tags=['todos'])
-async def delete_todo(id: int) -> dict:
-    for todo in todos:
-        if int(todo['id']) == id:
-            todos.remove(todo)
-        
-            return {
-                "data": f"Todo with id {id} has been deleted"
-            }
-    
-    return {"data": f"Todo with this id {id} wasn't found"}
+# Path Parameter
+# default type is String. Specify the type in the function to change it
+@app.get('/blog/{id}')
+async def show(id: int):
+    return {'data': id}
 
 
-todos = [
-    {
-        "id": "1", 
-        "Activity": "Go to the bank"
-    },
+@app.get('/blog/{id}/comments')
+async def comments(id: int):
+    return {'data': {'1', '2', '3'}}
 
-    {
-        "id": "2", 
-        "Activity": "Attend the Webinar about Higher education in the US"
-    }
-]
+
+@app.post('/blog')
+def create_blog(blog: Blog):
+    return {'data': f'Blog is created successfully with title {blog.title}'}
 
